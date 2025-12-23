@@ -1,2 +1,2 @@
 # nem-pensar
-Jogo Nem Pensar
+Jogo Nem Pensar! – PWA

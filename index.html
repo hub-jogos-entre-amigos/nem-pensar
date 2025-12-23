@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>NEM PENSAR by Adriano Aquino</title>
+<link rel="manifest" href="manifest.json">
+
+<style>
+:root{
+  --bg:#121212;
+  --primary:#FFD700;
+  --success:#28a745;
+  --danger:#dc3545;
+  --warn:#ffc107;
+  --gray:#2d2d2d;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+
+body{
+  background:var(--bg);
+  color:#fff;
+  font-family:Segoe UI,Roboto,Arial,sans-serif;
+  display:flex;
+  justify-content:center;
+  overflow:hidden;
+}
+
+#app{
+  width:100%;
+  max-width:450px;
+  height:100vh;
+  height:100dvh;                 /* Chrome mobile: viewport dinâmica */
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  position:relative;
+  padding-bottom: env(safe-area-inset-bottom); /* iOS/Chrome com barra */
+}
+
+.screen{
+  display:none;
+  flex-direction:column;
+  padding:20px;
+  height:100%;
+  align-items:center;
+  overflow:hidden;
+}
+.screen.active{display:flex}
+
+button{
+  width:100%;
+  padding:16px;
+  border:none;
+  border-radius:12px;
+  font-weight:900;
+  margin:6px 0;
+  cursor:pointer;
+  text-transform:uppercase;
+  -webkit-tap-highlight-color:transparent;
+}
+
+.btn-primary{background:var(--primary);color:#000}
+.btn-success{background:var(--success);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-gray{background:var(--gray);color:#fff}
+.btn-outline{background:transparent;border:2px solid var(--primary);color:var(--primary)}
+
+.scroll-y{overflow-y:auto;width:100%;-webkit-overflow-scrolling:touch}
+
+/* ===== SETUP PLAYERS (com remover) ===== */
+.player{
+  background:#333;
+  padding:10px;
+  border-radius:8px;
+  margin-bottom:6px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+.player span{font-weight:900;letter-spacing:1px}
+.player button{
+  width:auto;
+  padding:6px 12px;
+  font-size:12px;
+  margin:0;
+}
+
+/* ===== CARTA ===== */
+.card{
+  background:#f7f7f4;
+  color:#151515;
+  width:100%;
+  border-radius:22px;
+  padding:18px;
+  margin-top:10px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  position:relative;
+  min-height:330px;
+  border:2px solid #e6e2d4;
+  box-shadow:0 10px 18px rgba(0,0,0,.35);
+}
+
+.card-badge{
+  position:absolute;
+  top:12px;
+  right:12px;
+  background:var(--primary);
+  color:#000;
+  padding:10px 14px;
+  border-radius:999px;
+  font-weight:1000;
+  font-size:18px;
+  letter-spacing:1px;
+  box-shadow:0 10px 18px rgba(0,0,0,.28);
+  border:2px solid rgba(0,0,0,.12);
+  user-select:none;
+  white-space:nowrap;
+  width:auto;
+}
+
+.card h2{
+  width:100%;
+  text-transform:uppercase;
+  letter-spacing:2px;
+  margin:44px 0 14px 0;
+  background:var(--primary);
+  border-radius:16px;
+  font-weight:1000;
+  font-size:30px;
+  white-space:nowrap;
+  overflow:hidden;
+  user-select:none;
+
+  /* 🔽 AJUSTE ESSENCIAL */
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:64px;
+  padding:0;
+  text-align:center;
+}
+
+.card-body{
+  display:flex;
+  gap:10px;
+  width:100%;
+}
+
+.card ul{
+  list-style:none;
+  padding:0;
+  margin:0;
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.card li{
+  background:#fff;
+  border-radius:16px;
+  padding:14px;
+  font-weight:900;
+  text-transform:uppercase;
+}
+.card li::before{content:"🚫 ";}
+
+.nem-vertical{
+  width:42px;
+  background:#2b2b2b;
+  border-radius:16px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.nem-vertical span{
+  writing-mode:vertical-rl;
+  transform:rotate(180deg);
+  color:var(--primary);
+  font-weight:900;
+  letter-spacing:3px;
+  user-select:none;
+}
+
+/* ===== TIMER ===== */
+.timer-wrap{
+  width:100%;
+  text-align:center;
+  margin-top:6px;
+}
+#timerText{
+  font-size:52px;
+  font-weight:1000;
+  color:var(--primary);
+  user-select:none;
+  transform-origin:center;
+}
+
+.bar-bg{
+  width:100%;
+  height:12px;
+  background:#333;
+  border-radius:10px;
+  overflow:hidden;
+  margin-top:6px;
+}
+#timerBar{
+  height:100%;
+  width:100%;
+  background:var(--success);
+  transition:width .3s linear, background .25s;
+}
+
+@keyframes pulseSoft{0%{transform:scale(1)}50%{transform:scale(1.07)}100%{transform:scale(1)}}
+@keyframes pulseHard{0%{transform:scale(1)}50%{transform:scale(1.14)}100%{transform:scale(1)}}
+.pulse-soft{animation:pulseSoft .85s ease-in-out infinite;}
+.pulse-hard{animation:pulseHard .55s ease-in-out infinite;}
+
+#prep-timer{
+  margin-top:8px;
+  color:var(--danger);
+  font-weight:1000;
+  letter-spacing:1px;
+  user-select:none;
+}
+
+/* ===== LOBBY BOX ===== */
+.lobby-box{
+  width:100%;
+  background:#1c1c1c;
+  border:1px solid #333;
+  border-radius:16px;
+  padding:14px;
+  margin-top:12px;
+  text-align:center;
+}
+.lobby-score{
+  color:var(--primary);
+  font-size:44px;
+  font-weight:1000;
+  line-height:1;
+}
+
+/* ===== MODAIS (visual do jogo) ===== */
+.modal{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,.90);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:2000;
+  padding:18px;
+}
+.modal-box{
+  width:100%;
+  max-width:420px;
+  background:#1c1c1c;
+  border:1px solid #333;
+  border-radius:18px;
+  padding:18px;
+  box-shadow:0 18px 36px rgba(0,0,0,.55);
+}
+.modal-title{
+  color:var(--primary);
+  font-weight:1000;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  text-align:center;
+  margin:0 0 10px 0;
+  user-select:none;
+}
+.modal-text{
+  text-align:center;
+  margin:0 0 14px 0;
+  color:#ddd;
+  line-height:1.35;
+  user-select:none;
+}
+.modal-actions{display:flex;gap:10px}
+.modal-actions button{margin:0}
+
+/* ===== SCORE LIST ===== */
+.score-item{
+  background:#222;
+  border:1px solid #333;
+  border-radius:14px;
+  padding:12px 12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:10px;
+}
+.rank-badge{
+  width:30px;height:30px;border-radius:999px;
+  background:rgba(255,215,0,.16);
+  border:1px solid rgba(255,215,0,.35);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:1000;color:var(--primary);
+  flex:0 0 auto;
+}
+.score-left{display:flex;align-items:center;gap:10px}
+.score-right{display:flex;align-items:center;gap:10px}
+.score-pts{color:var(--primary);font-weight:1000;font-size:18px;white-space:nowrap}
+
+/* ===== Controles + / - ===== */
+.score-btn{
+  width:auto !important;
+  padding:8px 12px !important;
+  font-size:14px !important;
+  border-radius:12px !important;
+  margin:0 !important;
+  background:transparent;
+}
+.score-btn-minus{ background:rgba(220,53,69,.18); border:1px solid rgba(220,53,69,.55); color:#fff; }
+.score-btn-plus { background:rgba(40,167,69,.18);  border:1px solid rgba(40,167,69,.55);  color:#fff; }
+.score-btn:active{ transform:scale(.98); }
+
+/* ===== REGRAS: ajuste para caber e, se precisar, rolar SÓ no modal ===== */
+#modal-rules .modal-box{
+  padding:16px;
+  max-height: 92dvh; /* evita corte no Chrome mobile (viewport dinâmico) */
+  overflow-y: auto;  /* rolagem só aqui */
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom)); /* evita cortar no fim */
+}
+
+#modal-rules .modal-title{ font-size:22px; }
+
+#modal-rules .card{
+  margin:0;
+  transform:scale(.84);              /* um tiquinho menor que .86 */
+  transform-origin:top center;
+}
+
+#modal-rules .card h2{
+  font-size:24px;
+  padding:10px;
+}
+
+#modal-rules .card-badge{
+  font-size:15px;
+  padding:8px 12px;
+}
+
+#modal-rules li{
+  font-size:13px;
+  padding:12px;
+}
+</style>
+</head>
+
+<body>
+<div id="app">
+
+<!-- SETUP -->
+<div id="scr-setup" class="screen active">
+  <h1 style="color:var(--primary);margin:0;font-size:38px">NEM PENSAR!</h1>
+
+  <button class="btn-gray" onclick="openRules()">📜 REGRAS</button>
+
+  <input id="in-name" placeholder="NOME DO JOGADOR"
+    style="width:100%;padding:14px;border-radius:10px;border:none;margin:10px 0;background:#222;color:#fff;text-align:center">
+
+  <button class="btn-outline" onclick="addPlayer()">+ ADICIONAR JOGADOR</button>
+
+  <div id="player-list" class="scroll-y" style="flex:1;margin-top:10px"></div>
+
+  <button class="btn-primary" onclick="startGame()">INICIAR JOGO</button>
+</div>
+
+<!-- LOBBY -->
+<div id="scr-lobby" class="screen">
+  <h3 style="margin:10px 0 0 0;opacity:.85">VEZ DE:</h3>
+  <h1 id="lb-name" style="color:var(--primary);font-size:46px;margin:6px 0 0 0">?</h1>
+
+  <div class="lobby-box">
+    <div style="opacity:.85;font-weight:900;letter-spacing:1px">PONTUAÇÃO ATUAL</div>
+    <div id="lb-score" class="lobby-score">0</div>
+  </div>
+
+  <button class="btn-gray" onclick="openScore()">📊 VER PLACAR</button>
+
+  <div style="flex:1"></div>
+  <button class="btn-primary" style="height:90px;font-size:20px" onclick="revealCard()">REVELAR CARTA</button>
+</div>
+
+<!-- GAME -->
+<div id="scr-game" class="screen">
+  <div class="timer-wrap">
+    <div id="timerText">60s</div>
+    <div class="bar-bg"><div id="timerBar"></div></div>
+    <div id="prep-timer">MEMORIZE: 5s</div>
+  </div>
+
+  <div class="card">
+    <div class="card-badge" id="cardPts">1 PTS</div>
+    <h2 id="cardWord">PALAVRA</h2>
+    <div class="card-body">
+      <ul id="cardForbidden"></ul>
+      <div class="nem-vertical"><span>NEM PENSAR</span></div>
+    </div>
+  </div>
+
+  <button id="btnReady" class="btn-success" disabled onclick="startRound()">ESTOU PRONTO (5)</button>
+
+  <div style="display:flex;gap:10px;width:100%;margin-top:4px">
+    <button class="btn-gray" onclick="backToLobby()">VOLTAR</button>
+    <button class="btn-danger" onclick="openEndModal()">ENCERRAR RODADA</button>
+  </div>
+</div>
+
+<!-- DECISION -->
+<div id="scr-decision" class="screen">
+  <h2 style="margin:0 0 10px 0">FIM DA RODADA</h2>
+
+  <div class="card" style="margin-top:0">
+    <div class="card-badge" id="decCardPts">1 PTS</div>
+    <h2 id="decCardWord">PALAVRA</h2>
+    <div class="card-body">
+      <ul id="decCardForbidden"></ul>
+      <div class="nem-vertical"><span>NEM PENSAR</span></div>
+    </div>
+  </div>
+
+  <button class="btn-success" onclick="openWinnerModal()">✅ ALGUÉM ACERTOU</button>
+  <button class="btn-outline" onclick="noOneGotIt()">ERROU / PASSAR</button>
+</div>
+
+<!-- MODAL: ENCERRAR -->
+<div id="modal-end" class="modal">
+  <div class="modal-box">
+    <div class="modal-title">ENCERRAR RODADA?</div>
+    <p class="modal-text">Deseja realmente encerrar a rodada agora?</p>
+    <div class="modal-actions">
+      <button class="btn-gray" onclick="closeEndModal()">VOLTAR</button>
+      <button class="btn-danger" onclick="confirmEnd()">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PLACAR -->
+<div id="modal-score" class="modal">
+  <div class="modal-box">
+    <div class="modal-title">PLACAR</div>
+
+    <button id="btnScoreEdit" class="btn-outline" onclick="toggleScoreEdit()">
+      ✏️ AJUSTAR PONTUAÇÃO
+    </button>
+
+    <div id="score-body" class="scroll-y" style="max-height:55vh;margin-top:10px"></div>
+
+    <div class="modal-actions" style="margin-top:12px">
+      <button class="btn-primary" onclick="closeScore()">VOLTAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: QUEM ACERTOU (overlay verdadeiro, não bagunça o layout) -->
+<div id="modal-winner" class="modal">
+  <div class="modal-box">
+    <div class="modal-title">QUEM ACERTOU?</div>
+    <div id="winnerButtons" class="scroll-y" style="max-height:55vh;margin-top:6px"></div>
+    <div class="modal-actions" style="margin-top:12px">
+      <button class="btn-gray" onclick="closeWinnerModal()">CANCELAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: REGRAS -->
+<div id="modal-rules" class="modal">
+  <div class="modal-box">
+    <div class="modal-title">REGRAS (VERSÃO RÁPIDA)</div>
+
+    <p class="modal-text" style="margin-bottom:10px">
+      O objetivo é fazer o time adivinhar a <span style="color:var(--primary);font-weight:1000">PALAVRA</span> sem falar nenhuma das 5 palavras proibidas.
+    </p>
+
+    <div class="card">
+      <div class="card-badge">3 PTS</div>
+      <h2>BICICLETA</h2>
+      <div class="card-body">
+        <ul>
+          <li>RODA</li>
+          <li>PEDAL</li>
+          <li>GUIDÃO</li>
+          <li>CAPACETE</li>
+          <li>CADEADO</li>
+        </ul>
+        <div class="nem-vertical"><span>NEM PENSAR</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:10px; text-align:left; width:100%; color:#ddd; font-weight:700; line-height:1.35">
+      <div style="margin-bottom:6px">• Cada rodada dura <b style="color:var(--primary)">60s</b>.</div>
+      <div style="margin-bottom:6px">• Se alguém acertar: <b style="color:var(--primary)">quem acertou ganha os pontos</b> e <b style="color:var(--primary)">o narrador ganha +1</b>.</div>
+      <div style="margin-bottom:6px">• Se ninguém acertar: ninguém pontua e passa a vez.</div>
+      <div>• Se precisar, ajuste manualmente o placar no botão <b style="color:var(--primary)">AJUSTAR PONTUAÇÃO</b>.</div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:12px">
+      <button class="btn-primary" onclick="closeRules()">FECHAR</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+/* =========================
+   CARTAS (Total: 150)
+========================= */
+const cards = [
+  // FÁCEIS (1 ponto) - 45 Cartas
+  {w:"BANANA",p:1,f:["FRUTA","AMARELA","CASCA","MACACO","VITAMINA"]},
+  {w:"GATO",p:1,f:["PET","ANIMAL","MIAU","FELINO","LEITE"]},
+  {w:"SOL",p:1,f:["QUENTE","DIA","LUZ","ESTRELA","VERÃO"]},
+  {w:"FUTEBOL",p:1,f:["BOLA","GOL","CHUTE","CAMPO","JOGADOR"]},
+  {w:"ESCOVA",p:1,f:["DENTE","CABELO","LIMPAR","PENTEAR","CERDAS"]},
+  {w:"PIZZA",p:1,f:["QUEIJO","MASSA","ITALIA","COMIDA","FATIA"]},
+  {w:"CHAVE",p:1,f:["PORTA","FECHADURA","ABRIR","METAL","CADEADO"]},
+  {w:"AVIÃO",p:1,f:["VOAR","PILOTO","AEROPORTO","CÉU","ASAS"]},
+  {w:"TELEFONE",p:1,f:["LIGAR","CELULAR","CHAMADA","MENSAGEM","NÚMERO"]},
+  {w:"CAFÉ",p:1,f:["BEBIDA","QUENTE","XÍCARA","PRETO","ACORDAR"]},
+  {w:"LÁPIS",p:1,f:["ESCREVER","DESENHAR","PAPEL","BORRACHA","GRAFITE"]},
+  {w:"SORVETE",p:1,f:["GELADO","DOCE","CONE","CASQUINHA","SOBREMESA"]},
+  {w:"CARRO",p:1,f:["VEÍCULO","ESTRADA","DIRIGIR","MOTOR","RODA"]},
+  {w:"SAPATO",p:1,f:["PÉ","CALÇAR","CHÃO","MEIA","CADARÇO"]},
+  {w:"JANELA",p:1,f:["CASA","VIDRO","ABRIR","VER","PAREDE"]},
+  {w:"BOLO",p:1,f:["DOCE","ANIVERSÁRIO","FORNO","TRIGO","FESTA"]},
+  {w:"CHUVA",p:1,f:["ÁGUA","NUVEM","MOLHADO","TEMPO","GUARDA-CHUVA"]},
+  {w:"CAMA",p:1,f:["DORMIR","QUARTO","TRAVESSEIRO","LENÇOL","MÓVEL"]},
+  {w:"CADEIRA",p:1,f:["SENTAR","MESA","MÓVEL","PERNAS","ENCOSTO"]},
+  {w:"COZINHA",p:1,f:["COMIDA","FOGÃO","CASA","PANELA","COZINHAR"]},
+  {w:"CACHORRO",p:1,f:["PET","ANIMAL","LATIR","PATA","OSSO"]},
+  {w:"ÁRVORE",p:1,f:["FOLHA","TRONCO","VERDE","NATUREZA","MADEIRA"]},
+  {w:"LEITE",p:1,f:["BEBER","BRANCO","VACA","COPO","CÁLCIO"]},
+  {w:"ÔNIBUS",p:1,f:["TRANSPORTE","COLETIVO","RODA","PASSAGEIRO","PARADA"]},
+  {w:"MÃO",p:1,f:["DEDOS","BRAÇO","CORPO","PEGAR","LUVAS"]},
+  {w:"FOGO",p:1,f:["QUENTE","CHAMA","QUEIMAR","FUMAÇA","INCÊNDIO"]},
+  {w:"RELÂMPAGO",p:1,f:["TROVÃO","CÉU","TEMPESTADE","LUZ","CLARÃO"]},
+  {w:"PIPOCA",p:1,f:["MILHO","CINEMA","SALGADA","SACO","PANELA"]},
+  {w:"BORBOLETA",p:1,f:["ASA","INSETO","VOAR","LAGARTA","JARDIM"]},
+  {w:"PÃO",p:1,f:["PADARIA","COMIDA","CAFÉ","MANHÃ","MASSA"]},
+  {w:"COPO",p:1,f:["BEBER","ÁGUA","VIDRO","PLÁSTICO","LÍQUIDO"]},
+  {w:"CÉU",p:1,f:["NUVEM","AZUL","ESTRELAS","ALTO","SOL"]},
+  {w:"LUA",p:1,f:["NOITE","BRILHO","CÉU","SATÉLITE","FASES"]},
+  {w:"GELO",p:1,f:["FRIO","ÁGUA","CONGELADO","GELADEIRA","CUBO"]},
+  {w:"NARIZ",p:1,f:["ROSTO","CHEIRO","RESPIRAR","CORPO","OLFATO"]},
+  {w:"BANHO",p:1,f:["CHUVEIRO","ÁGUA","SABONETE","LIMPAR","TOALHA"]},
+  {w:"PORTA",p:1,f:["ABRIR","ENTRAR","CASA","MAÇANETA","SAÍDA"]},
+  {w:"BOLA",p:1,f:["JOGAR","REDONDA","FUTEBOL","CHUTE","BRINQUEDO"]},
+  {w:"FLOR",p:1,f:["JARDIM","PÉTALA","PLANTA","PERFUME","ROSA"]},
+  {w:"PEIXE",p:1,f:["MAR","ÁGUA","NADAR","ANZOL","ESCAMA"]},
+  {w:"MESA",p:1,f:["CADEIRA","COMER","MÓVEL","SALA","QUATRO PERNAS"]},
+  {w:"CANETA",p:1,f:["ESCREVER","TINTA","PAPEL","CADERNO","AZUL"]},
+  {w:"MAÇÃ",p:1,f:["FRUTA","VERMELHA","COMER","BRANCA DE NEVE","ÁRVORE"]},
+  {w:"DENTE",p:1,f:["BOCA","BRANCO","SORRISO","ESCOVAR","CÁRIE"]},
+  {w:"CHAPÉU",p:1,f:["CABEÇA","ACESSÓRIO","SOL","USAR","BONÉ"]},
+
+  // MÉDIAS (3 pontos) - 75 Cartas
+  {w:"INTERNET",p:3,f:["REDE","CONEXÃO","SITE","WIFI","COMPUTADOR"]},
+  {w:"CINEMA",p:3,f:["FILME","PIPOCA","TELA","ATRIZ","INGRESSO"]},
+  {w:"DINHEIRO",p:3,f:["BANCO","CARTÃO","PAGAR","MOEDA","NOTAS"]},
+  {w:"ESPELHO",p:3,f:["REFLEXO","VIDRO","IMAGEM","ROSTO","OLHAR"]},
+  {w:"MÚSICA",p:3,f:["SOM","CANTAR","INSTRUMENTO","NOTA","OUVIR"]},
+  {w:"RELÓGIO",p:3,f:["HORA","TEMPO","PULSO","MINUTOS","PONTEIRO"]},
+  {w:"BIBLIOTECA",p:3,f:["LIVRO","LER","ESTANTE","SILÊNCIO","PESQUISA"]},
+  {w:"HOSPITAL",p:3,f:["MÉDICO","DOENTE","SAÚDE","REMÉDIO","ENFERMEIRA"]},
+  {w:"CHURRASCO",p:3,f:["CARNE","ESPETO","FOGO","FESTA","DOMINGO"]},
+  {w:"OCEANO",p:3,f:["MAR","ÁGUA","SALGADO","PEIXE","AZUL"]},
+  {w:"TEATRO",p:3,f:["PEÇA","PALCO","ATOR","APLAUSO","CENA"]},
+  {w:"UNIVERSO",p:3,f:["ESPAÇO","PLANETA","GALÁXIA","ASTRONAUTA","VÁCUO"]},
+  {w:"FOTOGRAFIA",p:3,f:["FOTO","CÂMERA","IMAGEM","RETRATO","FLASH"]},
+  {w:"ACADEMIA",p:3,f:["TREINO","MÚSCULO","PESO","MALHAR","SAÚDE"]},
+  {w:"REVOLUÇÃO",p:3,f:["MUDANÇA","GUERRA","HISTÓRIA","POLÍTICA","POVO"]},
+  {w:"GELADEIRA",p:3,f:["FRIO","COMIDA","COZINHA","CONGELADOR","ELETRODOMÉSTICO"]},
+  {w:"ANIVERSÁRIO",p:3,f:["FESTA","BOLO","IDADE","PRESENTE","VELA"]},
+  {w:"BICICLETA",p:3,f:["PEDAL","GUIDÃO","RODA","CICLISTA","CORRENTE"]},
+  {w:"CHOCOLATE",p:3,f:["DOCE","CACAU","BOMBOM","AO LEITE","AMARGO"]},
+  {w:"DESERTO",p:3,f:["AREIA","QUENTE","CAMELO","SECO","OÁSIS"]},
+  {w:"ESCORPIÃO",p:3,f:["VENENO","ANIMAL","PICADA","SIGNO","CAUDA"]},
+  {w:"FANTASMA",p:3,f:["ASSOMBRAÇÃO","MEDO","ESPÍRITO","BRANCO","LENÇOL"]},
+  {w:"GRAVIDADE",p:3,f:["TERRA","QUEDA","FORÇA","NEWTON","PESO"]},
+  {w:"HELICÓPTERO",p:3,f:["VOAR","HÉLICE","CÉU","TRANSPORTE","PILOTO"]},
+  {w:"INVERNO",p:3,f:["FRIO","ESTAÇÃO","NEVE","GELO","CASACO"]},
+  {w:"MAPA",p:3,f:["LUGAR","GUIAR","PAPEL","VIAGEM","LOCALIZAÇÃO"]},
+  {w:"ASTRONAUTA",p:3,f:["ESPAÇO","LUA","FOGUETE","ESTAÇÃO","NASA"]},
+  {w:"VAMPIRO",p:3,f:["SANGUE","MORCEGO","DRÁCULA","DENTE","NOITE"]},
+  {w:"ESTÁDIO",p:3,f:["FUTEBOL","JOGO","TORCIDA","ARQUIBANCADA","CAMPO"]},
+  {w:"PIRATA",p:3,f:["NAVIO","TESOURO","MAR","TAPA-OLHO","GANCHO"]},
+  {w:"MÁGICO",p:3,f:["TRUQUE","CARTOLA","ILUSÃO","VARINHA","COELHO"]},
+  {w:"TERREMOTO",p:3,f:["CHÃO","TREMÊ","ABALO","VIBRAÇÃO","DESASTRE"]},
+  {w:"ZUMBI",p:3,f:["MORTO","VIVO","CÉREBRO","APOCALIPSE","MONSTRO"]},
+  {w:"DINOSSAURO",p:3,f:["FÓSSIL","EXTINTO","JURÁSSICO","RÉPTIL","GIGANTE"]},
+  {w:"SUBMARINO",p:3,f:["MAR","MERGULHO","PROFUNDO","ÁGUA","MARINHA"]},
+  {w:"BANCO",p:3,f:["DINHEIRO","CAIXA","CONTA","AGÊNCIA","PAGAR"]},
+  {w:"MUSEU",p:3,f:["ARTE","HISTÓRIA","QUADROS","EXPOSIÇÃO","ANTIGO"]},
+  {w:"FARMÁCIA",p:3,f:["REMÉDIO","DOENÇA","SAÚDE","COMPRAR","RECEITA"]},
+  {w:"CASTELO",p:3,f:["REI","RAINHA","PRÍNCIPE","FORTALEZA","IDADE MÉDIA"]},
+  {w:"ESPETÁCULO",p:3,f:["SHOW","TEATRO","PALCO","APRESENTAÇÃO","PÚBLICO"]},
+  {w:"ESTRADA",p:3,f:["CAMINHO","ASFALTO","VIAGEM","CARRO","RODOVIA"]},
+  {w:"ESPIÃO",p:3,f:["AGENTE","SECRETO","MISSÃO","DISFARCE","INVESTIGAR"]},
+  {w:"LABIRINTO",p:3,f:["CAMINHO","SAÍDA","PERDIDO","PAREDE","ENIGMA"]},
+  {w:"METRÔ",p:3,f:["TREM","TRANSPORTE","TÚNEL","ESTAÇÃO","TRILHO"]},
+  {w:"PARAQUEDAS",p:3,f:["SALTO","AVIAO","QUEDA","VOAR","EQUIPAMENTO"]},
+  {w:"PIANO",p:3,f:["TECLAS","MÚSICA","INSTRUMENTO","PRETO","BRANCO"]},
+  {w:"POLÍCIA",p:3,f:["CRIME","LEI","VIATURA","SEGURANÇA","PRENDER"]},
+  {w:"PREFEITO",p:3,f:["CIDADE","POLÍTICA","VOTO","GOVERNO","ELEIÇÃO"]},
+  {w:"SABONETE",p:3,f:["BANHO","LIMPAR","CHEIRO","ESPUMA","LAVAR"]},
+  {w:"TELEVISÃO",p:3,f:["PROGRAMA","TELA","CANAL","ASSISTIR","CONTROLE"]},
+  {w:"XADREZ",p:3,f:["JOGO","TABULEIRO","PEÇAS","REI","ESTRATÉGIA"]},
+  {w:"TESOURO",p:3,f:["PIRATA","OURO","BAÚ","MAPA","DINHEIRO"]},
+  {w:"FLORESTA",p:3,f:["ÁRVORES","MATA","ANIMAIS","VERDE","NATUREZA"]},
+  {w:"FOGUETE",p:3,f:["ESPAÇO","NASA","VOAR","LUA","ASTRONAUTA"]},
+  {w:"CIRCO",p:3,f:["PALHAÇO","TENDA","ESPETÁCULO","MÁGICO","MALABARISTA"]},
+  {w:"PONTE",p:3,f:["ATRAVESSAR","RIO","ESTRADA","LADO","ALTO"]},
+  {w:"REI",p:3,f:["COROA","TRONO","CASTELO","RAINHA","MONARQUIA"]},
+  {w:"CÂMERA",p:3,f:["FOTO","VÍDEO","FILMAR","LENTE","FOTOGRAFIA"]},
+  {w:"ESTRELA",p:3,f:["CÉU","NOITE","BRILHO","SOL","GALÁXIA"]},
+  {w:"BÚSSOLA",p:3,f:["NORTE","DIREÇÃO","MAPA","AGULHA","ORIENTAÇÃO"]},
+  {w:"AQUÁRIO",p:3,f:["PEIXE","ÁGUA","VIDRO","PET","NADAR"]},
+  {w:"BATERIA",p:3,f:["CELULAR","ENERGIA","CARREGAR","MÚSICA","RITMO"]},
+  {w:"FONE",p:3,f:["MÚSICA","ESCUTAR","SOM","OUVIDO","CELULAR"]},
+  {w:"MOCHILA",p:3,f:["ESCOLA","COSTAS","GUARDAR","VIAGEM","ALÇA"]},
+  {w:"ÓCULOS",p:3,f:["VER","OLHO","LENTE","VISÃO","ARMAÇÃO"]},
+  {w:"PALHAÇO",p:3,f:["CIRCO","NARIZ VERMELHO","ENGRAÇADO","RIR","MAQUIAGEM"]},
+  {w:"PARQUE",p:3,f:["ÁRVORES","BRINCAR","DIVERSÃO","PASSEAR","VERDE"]},
+  {w:"PISCINA",p:3,f:["ÁGUA","NADAR","VERÃO","AZUL","MERGULHO"]},
+  {w:"PRESENTE",p:3,f:["GANHAR","ANIVERSÁRIO","CAIXA","LAÇO","SURPRESA"]},
+  {w:"QUEIJO",p:3,f:["LEITE","AMARELO","RATO","COMIDA","MINAS"]},
+  {w:"SÁBADO",p:3,f:["FINAL DE SEMANA","DOMINGO","DIA","DESCANSO","FOLGA"]},
+  {w:"TREM",p:3,f:["TRILHO","TRANSPORTE","ESTAÇÃO","VAGÃO","LOCOMOTIVA"]},
+  {w:"XÍCARA",p:3,f:["CAFÉ","CHÁ","BEBER","ASA","PIRES"]},
+  {w:"ZEBRA",p:3,f:["ANIMAL","LISTRADO","PRETO E BRANCO","SAVANA","ÁFRICA"]},
+  {w:"GUITARRA",p:3,f:["MÚSICA","CORDAS","INSTRUMENTO","ROCK","SOLO"]},
+
+  // DIFÍCEIS (5 pontos) - 30 Cartas
+  {w:"SAUDADE",p:5,f:["FALTA","SENTIMENTO","DISTÂNCIA","RECORDAÇÃO","AUSÊNCIA"]},
+  {w:"LIBERDADE",p:5,f:["PRISÃO","DIREITO","LIVRE","ESCOLHA","AUTONOMIA"]},
+  {w:"DEMOCRACIA",p:5,f:["VOTO","ELEIÇÃO","POVO","GOVERNO","POLÍTICA"]},
+  {w:"NOSTALGIA",p:5,f:["PASSADO","LEMBRANÇA","SENTIMENTO","ANTIGO","RETRÔ"]},
+  {w:"METÁFORA",p:5,f:["FIGURA","LINGUAGEM","COMPARAÇÃO","POESIA","SENTIDO"]},
+  {w:"FILOSOFIA",p:5,f:["PENSAR","SABEDORIA","CONHECIMENTO","IDEIA","EXISTÊNCIA"]},
+  {w:"SARCASMO",p:5,f:["IRONIA","PIADA","DEBOCHE","RIR","FALA"]},
+  {w:"PARADOXO",p:5,f:["CONTRADIÇÃO","LÓGICA","OPOSIÇÃO","FRASES","IMPOSSÍVEL"]},
+  {w:"DESTINO",p:5,f:["FUTURO","SORTE","VIDA","ACASO","ESCRITO"]},
+  {w:"AMBIGUIDADE",p:5,f:["SENTIDO","DUPLO","CONFUSÃO","INTERPRETAÇÃO","DÚVIDA"]},
+  {w:"EGOÍSMO",p:5,f:["PRÓPRIO","PESSOA","EGOCÊNTRICO","DIVIDIR","EU"]},
+  {w:"JUSTIÇA",p:5,f:["LEI","TRIBUNAL","DIREITO","JUIZ","CERTO"]},
+  {w:"PERSPECTIVA",p:5,f:["PONTO DE VISTA","OLHAR","VISÃO","DESENHO","ÂNGULO"]},
+  {w:"SINCRONIA",p:5,f:["TEMPO","JUNTO","COORDENAÇÃO","MESMO","RITMO"]},
+  {w:"COSMO",p:5,f:["UNIVERSO","ESPAÇO","ESTRELAS","INFINITO","ORDEM"]},
+  {w:"ALEGORIA",p:5,f:["SÍMBOLO","REPRESENTAÇÃO","HISTÓRIA","SIGNIFICADO","METÁFORA"]},
+  {w:"DESTREZA",p:5,f:["HABILIDADE","AGILIDADE","MÃO","FACILIDADE","TALENTO"]},
+  {w:"EFÊMERO",p:5,f:["RÁPIDO","TEMPO","CURTO","PASSAGEIRO","DURAR"]},
+  {w:"HIPÓTESE",p:5,f:["TEORIA","CIÊNCIA","SUPOSIÇÃO","TESTE","DÚVIDA"]},
+  {w:"RESILIÊNCIA",p:5,f:["FORÇA","ADAPTAÇÃO","DIFICULDADE","SUPERAR","RESISTÊNCIA"]},
+  {w:"ALGORITMO",p:5,f:["CÓDIGO","PROGRAMAÇÃO","LÓGICA","COMPUTADOR","SEQUÊNCIA"]},
+  {w:"EVOLUÇÃO",p:5,f:["MUDANÇA","DARWIN","TEMPO","ESPÉCIES","MELHORIA"]},
+  {w:"INTUIÇÃO",p:5,f:["SENTIR","INSTINTO","SABER","PENSAMENTO","VOZ INTERIOR"]},
+  {w:"METAVERSO",p:5,f:["VIRTUAL","REALIDADE","INTERNET","MUNDO","AVATAR"]},
+  {w:"ORÇAMENTO",p:5,f:["DINHEIRO","PLANEJAR","GASTOS","FINANÇAS","VALOR"]},
+  {w:"PACIÊNCIA",p:5,f:["ESPERAR","CALMA","TEMPO","SENTIMENTO","TRANQUILIDADE"]},
+  {w:"PROXIMIDADE",p:5,f:["PERTO","DISTÂNCIA","AO LADO","LOCAL","CONTATO"]},
+  {w:"RETRATO",p:5,f:["FOTO","PINTURA","ROSTO","IMAGEM","DESENHO"]},
+  {w:"SÍMBOLO",p:5,f:["DESENHO","SIGNIFICADO","REPRESENTA","MARCA","LOGOTIPO"]},
+  {w:"VIRTUAL",p:5,f:["COMPUTADOR","ONLINE","INTERNET","REALIDADE","NÃO REAL"]}
+];
+
+
+/* ===== STATE ===== */
+let deck = [];
+let players = [];
+let cur = 0;     // narrador (índice players)
+let idx = 0;     // índice da carta no deck
+let currentCard = null;
+
+let prep = 5, time = 60;
+let prepInt = null, timeInt = null;
+let tickTimeout = null;
+
+/* ===== NAV ===== */
+function show(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+/* =========================
+   SETUP PLAYERS (LACRADO)
+========================= */
+function addPlayer(){
+  const inp = document.getElementById("in-name");
+  if(!inp.value.trim()) return;
+  players.push({name: inp.value.toUpperCase(), score: 0});
+  renderPlayers();
+  inp.value = "";
+  inp.focus();
+}
+function removePlayer(i){
+  players.splice(i,1);
+  renderPlayers();
+}
+function renderPlayers(){
+  const d = document.getElementById("player-list");
+  d.innerHTML = "";
+  players.forEach((p,i)=>{
+    const div = document.createElement("div");
+    div.className = "player";
+    div.innerHTML = `<span>${p.name}</span><button class="btn-danger" onclick="removePlayer(${i})">X</button>`;
+    d.appendChild(div);
+  });
+}
+
+/* ===== START GAME ===== */
+function startGame(){
+  if(players.length < 2){
+    openSystemlessMsg("ATENÇÃO","Mínimo 2 jogadores.");
+    return;
+  }
+  deck = [...cards].sort(()=>Math.random()-0.5);  // aleatório
+  idx = 0;
+  cur = 0;
+  updateLobby();
+  show("scr-lobby");
+}
+function updateLobby(){
+  document.getElementById("lb-name").innerText  = players[cur].name;
+  document.getElementById("lb-score").innerText = players[cur].score;
+}
+
+/* ===== TITLE FIT (1 linha) ===== */
+function fitTitle(el){
+  let size = 30;
+  el.style.fontSize = size + "px";
+  while(el.scrollWidth > el.clientWidth && size > 16){
+    size--;
+    el.style.fontSize = size + "px";
+  }
+}
+
+/* ===== REVEAL ===== */
+function revealCard(){
+  currentCard = deck[idx];
+
+  const cardWord = document.getElementById("cardWord");
+  const decWord  = document.getElementById("decCardWord");
+
+  cardWord.innerText = currentCard.w;
+  document.getElementById("cardPts").innerText = currentCard.p + " PTS";
+  document.getElementById("cardForbidden").innerHTML = currentCard.f.map(x=>"<li>"+x+"</li>").join("");
+
+  document.getElementById("decCardPts").innerText = currentCard.p + " PTS";
+  decWord.innerText = currentCard.w;
+  document.getElementById("decCardForbidden").innerHTML = currentCard.f.map(x=>"<li>"+x+"</li>").join("");
+
+  fitTitle(cardWord);
+  fitTitle(decWord);
+
+  // reset timer UI
+  time = 60;
+  updateTimerUI(true);
+
+  // mostra jogo
+  show("scr-game");
+
+  // memorize
+  prep = 5;
+  const btn = document.getElementById("btnReady");
+  btn.disabled = true;
+  btn.innerText = "ESTOU PRONTO ("+prep+")";
+  document.getElementById("prep-timer").innerText = "MEMORIZE: " + prep + "s";
+
+  clearInterval(prepInt);
+  prepInt = setInterval(()=>{
+    prep--;
+    btn.innerText = "ESTOU PRONTO ("+prep+")";
+    document.getElementById("prep-timer").innerText = "MEMORIZE: " + prep + "s";
+    if(prep <= 0){
+      clearInterval(prepInt);
+      btn.disabled = false;
+      btn.innerText = "ESTOU PRONTO";
+      document.getElementById("prep-timer").innerText = "VALENDO!";
+    }
+  },1000);
+}
+
+/* =========================
+   SOM (tic tac) + TIMER
+========================= */
+let audioCtx = null;
+
+function ensureAudio(){
+  try{
+    if(!audioCtx){
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if(!Ctx) return;
+      audioCtx = new Ctx();
+    }
+    if(audioCtx && audioCtx.state === "suspended"){
+      audioCtx.resume && audioCtx.resume();
+    }
+  }catch(e){}
+}
+
+// desbloqueia áudio no 1º gesto
+document.addEventListener("pointerdown", ensureAudio, {passive:true, once:true});
+document.addEventListener("touchstart", ensureAudio, {passive:true, once:true});
+
+function tickSound(){
+  ensureAudio();
+  if(!audioCtx) return;
+  try{
+    const now = audioCtx.currentTime;
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = "square";
+    o.frequency.setValueAtTime(190, now);
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.10, now + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(now);
+    o.stop(now + 0.06);
+  }catch(e){}
+}
+
+// cadência por faixa (mais lento no início; acelera perto do fim)
+function tickIntervalMsByTime(t){
+  if(t <= 5)  return 250;
+  if(t <= 12) return 450;
+  if(t <= 30) return 700;
+  return 1000;
+}
+
+function scheduleTicks(){
+  clearTimeout(tickTimeout);
+  if(time <= 0) return;
+  tickSound();
+  tickTimeout = setTimeout(scheduleTicks, tickIntervalMsByTime(time));
+}
+
+function updateTimerUI(force){
+  const el = document.getElementById("timerText");
+  const bar = document.getElementById("timerBar");
+
+  el.innerText = time + "s";
+  bar.style.width = (time/60*100) + "%";
+
+  if(time > 30) bar.style.background = "var(--success)";
+  else if(time > 12) bar.style.background = "var(--warn)";
+  else bar.style.background = "var(--danger)";
+
+  el.classList.remove("pulse-soft","pulse-hard");
+  if(time <= 10 && time >= 6) el.classList.add("pulse-soft");
+  if(time <= 5  && time >= 1) el.classList.add("pulse-hard");
+  if(time <= 0) el.classList.remove("pulse-soft","pulse-hard");
+}
+
+function startRound(){
+  clearInterval(timeInt);
+  clearTimeout(tickTimeout);
+
+  time = 60;
+  updateTimerUI(true);
+
+  // trava botão
+  const btn = document.getElementById("btnReady");
+  btn.disabled = true;
+  btn.innerText = "RODANDO...";
+
+  // som começa junto
+  scheduleTicks();
+
+  timeInt = setInterval(()=>{
+    time--;
+    updateTimerUI();
+    if(time <= 0){
+      endRoundAsk();
+    }
+  },1000);
+}
+
+/* ===== ENCERRAR / FIM ===== */
+function openEndModal(){ document.getElementById("modal-end").style.display = "flex"; }
+function closeEndModal(){ document.getElementById("modal-end").style.display = "none"; }
+function confirmEnd(){
+  closeEndModal();
+  endRoundAsk();
+}
+
+function endRoundAsk(){
+  clearInterval(timeInt);
+  clearTimeout(tickTimeout);
+
+  // reseta botão para a próxima carta
+  const btn = document.getElementById("btnReady");
+  btn.disabled = true;
+  btn.innerText = "ESTOU PRONTO (5)";
+
+  show("scr-decision");
+}
+
+/* ===== QUEM ACERTOU (MODAL overlay) ===== */
+function openWinnerModal(){
+  const wrap = document.getElementById("winnerButtons");
+  wrap.innerHTML = "";
+
+  players.forEach((p,i)=>{
+    if(i === cur) return; // narrador não entra
+    const b = document.createElement("button");
+    b.className = "btn-success";
+    b.innerText = p.name;
+    b.onclick = () => winner(i);
+    wrap.appendChild(b);
+  });
+
+  document.getElementById("modal-winner").style.display = "flex";
+}
+function closeWinnerModal(){
+  document.getElementById("modal-winner").style.display = "none";
+}
+
+function winner(i){
+  // Regra A: quem acertou ganha os pontos da carta; narrador +1
+  players[i].score += currentCard.p;
+  players[cur].score += 1;
+
+  closeWinnerModal();
+  nextTurn();
+}
+
+function noOneGotIt(){
+  closeWinnerModal();
+  nextTurn();
+}
+
+function nextTurn(){
+  idx++;
+  if(idx >= deck.length){
+    openSystemlessMsg("ACABARAM AS CARTAS","Fim do baralho. Você pode reiniciar o jogo.");
+    // volta pro setup mantendo jogadores (você pode mudar se quiser)
+    show("scr-setup");
+    return;
+  }
+  cur = (cur + 1) % players.length;
+  updateLobby();
+  show("scr-lobby");
+}
+
+function backToLobby(){
+  clearInterval(timeInt);
+  clearTimeout(tickTimeout);
+  updateLobby();
+  show("scr-lobby");
+}
+
+/* =========================
+   MODAL MENSAGEM (sem alert)
+========================= */
+function openSystemlessMsg(title, text){
+  // usa o modal-end como "genérico" sem quebrar layout
+  const m = document.getElementById("modal-end");
+  m.querySelector(".modal-title").innerText = title || "AVISO";
+  m.querySelector(".modal-text").innerText = text || "";
+  // troca botões: só OK
+  const actions = m.querySelector(".modal-actions");
+  actions.innerHTML = `
+    <button class="btn-primary" onclick="closeEndModal()">OK</button>
+  `;
+  m.style.display = "flex";
+}
+
+/* =========================
+   PLACAR + AJUSTE MANUAL
+========================= */
+let scoreEditMode = false;
+
+function openScore(){
+  // sempre abre com modo OFF
+  scoreEditMode = false;
+  const btn = document.getElementById("btnScoreEdit");
+  btn.innerText = "✏️ AJUSTAR PONTUAÇÃO";
+
+  document.getElementById("modal-score").style.display = "flex";
+  renderScore();
+}
+function closeScore(){
+  // ao sair, DESATIVA o modo também
+  scoreEditMode = false;
+  const btn = document.getElementById("btnScoreEdit");
+  btn.innerText = "✏️ AJUSTAR PONTUAÇÃO";
+
+  document.getElementById("modal-score").style.display = "none";
+
+  // garante que a pontuação do lobby reflita qualquer ajuste manual
+  updateLobby();
+}
+function toggleScoreEdit(){
+  scoreEditMode = !scoreEditMode;
+  const btn = document.getElementById("btnScoreEdit");
+  btn.innerText = scoreEditMode ? "🟡 AJUSTE ATIVO" : "✏️ AJUSTAR PONTUAÇÃO";
+  renderScore();
+}
+
+function renderScore(){
+  const body = document.getElementById("score-body");
+
+  const ranked = players
+    .map((p, originalIndex) => ({ name:p.name, score:p.score, originalIndex }))
+    .sort((a,b) => b.score - a.score);
+
+  body.innerHTML = ranked.map((p, rank) => {
+    const editControls = scoreEditMode
+      ? `
+        <button class="score-btn score-btn-minus" onclick="scoreDelta(${p.originalIndex}, -1)">−</button>
+        <button class="score-btn score-btn-plus"  onclick="scoreDelta(${p.originalIndex}, +1)">+</button>
+      `
+      : "";
+
+    return `
+      <div class="score-item">
+        <div class="score-left">
+          <div class="rank-badge">${rank+1}</div>
+          <div style="font-weight:1000;letter-spacing:1px">${p.name}</div>
+        </div>
+        <div class="score-right">
+          <div class="score-pts">${p.score} PTS</div>
+          ${editControls}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function scoreDelta(playerIndex, delta){
+  if(!players[playerIndex]) return;
+  players[playerIndex].score = Math.max(0, (players[playerIndex].score || 0) + delta);
+  renderScore();
+  updateLobby(); // ✅ atualiza imediatamente o “PONTUAÇÃO ATUAL” do jogador da vez
+}
+
+/* =========================
+   REGRAS (botão no setup)
+========================= */
+function openRules(){
+  const m = document.getElementById("modal-rules");
+  if(m) m.style.display = "flex";
+}
+function closeRules(){
+  const m = document.getElementById("modal-rules");
+  if(m) m.style.display = "none";
+}
+
+/* ===== UX: Enter no input ===== */
+document.getElementById("in-name").addEventListener("keydown",(e)=>{
+  if(e.key === "Enter"){ e.preventDefault(); addPlayer(); }
+});
+</script>
+</body>
+</html>
